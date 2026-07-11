@@ -73,8 +73,8 @@
   .icon-btn:active{opacity:.7;}
 
   /* ---------- Screen container ---------- */
-  .screen-wrap{flex:1;display:flex;flex-direction:column;}
-  .screen{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+  .screen-wrap{flex:1;display:flex;flex-direction:column;min-height:0;}
+  .screen{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
   .screen.no-scroll{overflow:hidden;display:flex;flex-direction:column;}
   .pad{padding:4px 18px 24px;}
 
@@ -519,7 +519,7 @@
     <span class="sub">설정</span>
   </div>
   <div class="screen">
-    <div class="pad">
+    <div class="pad" style="padding-bottom:calc(48px + env(safe-area-inset-bottom));">
       <div id="reviewTimeSettings"></div>
 
       <div class="section-title">데이터</div>
