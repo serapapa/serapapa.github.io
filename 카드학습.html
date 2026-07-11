@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0F1729">
+<title>카드학습</title>
+<style>
+  :root{
+    --ink:#000000;
+    --surface:#1a1a1a;
+    --line:rgba(255,255,255,.1);
+    --text:#ffffff;
+    --text-dim:#888888;
+    --accent:#555555;
+    --accent-light:#777777;
+    --paper:#2a2a2a;
+    --paper-ink:#ffffff;
+    --radius:16px;
+    font-size:16px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overscroll-behavior:none;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;
+    background:var(--ink);
+    color:var(--text);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    flex-direction:column;
+    height:100dvh;
+    overflow:hidden;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+  input,textarea{font-family:inherit;font-size:1rem;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex;align-items:center;gap:12px;
+    padding:16px 18px 12px;
+    flex-shrink:0;
+  }
+  .topbar h1{
+    font-size:1.2rem;font-weight:700;
+    display:flex;align-items:center;gap:8px;
+  }
+  .topbar h1 .mark{
+    width:24px;height:24px;border-radius:6px;
+    background:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    font-size:.85rem;color:#000;font-weight:700;
+  }
+  .topbar .sub{
+    margin-left:auto;font-size:.75rem;color:var(--text-dim);font-variant-numeric:tabular-nums;
+  }
+  .back-btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    font-size:.9rem;font-weight:600;color:var(--text);
+    padding:8px 12px;min-height:44px;transition:opacity .15s;
+  }
+  .back-btn:active{opacity:.7;}
+  .back-btn svg{width:20px;height:20px;}
+  .icon-btn{
+    font-size:1.3rem;padding:10px;min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:opacity .15s;
+  }
+  .icon-btn:active{opacity:.7;}
+
+  /* ---------- Screen container ---------- */
+  .screen-wrap{flex:1;display:flex;flex-direction:column;}
+  .screen{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+  .screen.no-scroll{overflow:hidden;display:flex;flex-direction:column;}
+  .pad{padding:4px 18px 24px;}
+
+  /* ---------- Deck list ---------- */
+  .deck{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    margin-bottom:12px;
+    transition:transform .12s ease;
+  }
+  .deck:active{transform:scale(.98);}
+  .deck h2{font-size:1.1rem;font-weight:600;margin:0;}
+  .deck .meta{
+    display:flex;align-items:center;gap:12px;margin-top:10px;
+    font-size:.85rem;color:var(--text-dim);
+  }
+  .deck .meta .known{color:var(--accent);}
+  .deck .bar{
+    height:4px;border-radius:2px;background:var(--line);margin-top:10px;overflow:hidden;
+  }
+  .deck .bar > span{display:block;height:100%;background:var(--accent);transition:width .3s;}
+  .deck .actions{
+    display:flex;gap:8px;margin-top:12px;
+  }
+  .top-btn{
+    width:44px;height:44px;border-radius:50%;background:var(--surface);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+    color:var(--text);transition:all .15s;cursor:pointer;
+  }
+  .top-btn:active{background:var(--line);transform:scale(.9);}
+  .chip{
+    font-size:.85rem;font-weight:600;padding:12px 16px;border-radius:8px;
+    background:transparent;color:var(--text);border:1px solid var(--line);transition:all .15s;
+    min-height:44px;display:flex;align-items:center;justify-content:center;
+  }
+  .chip.primary{background:var(--accent);color:#ffffff;border-color:var(--accent);}
+  .chip.ghost{color:var(--text-dim);}
+  .chip:active{opacity:.7;}
+
+  .empty{
+    text-align:center;color:var(--text-dim);padding:60px 24px;
+  }
+  .empty .big{font-size:2.2rem;margin-bottom:12px;}
+  .empty p{font-size:.9rem;line-height:1.6;}
+
+  /* ---------- Floating add ---------- */
+  .fab-row{
+    display:flex;gap:10px;padding:12px 18px;flex-shrink:0;
+  }
+  .fab{
+    flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+    padding:14px;min-height:44px;border-radius:12px;font-weight:600;font-size:.95rem;
+    background:var(--accent);color:#000;border:none;transition:opacity .15s;
+  }
+  .fab.secondary{
+    flex:0 0 44px;width:44px;height:44px;min-width:44px;background:transparent;color:var(--text);
+    border:1px solid var(--line);padding:0;display:flex;align-items:center;justify-content:center;
+  }
+  .fab:active{opacity:.8;}
+  .fab svg{width:20px;height:20px;}
+
+  /* ---------- Study mode ---------- */
+  #screen-study{
+    display:flex;flex-direction:column;position:relative;
+    padding-bottom:80px;
+  }
+  .study-head{
+    display:flex;align-items:center;gap:12px;padding:4px 18px;flex-shrink:0;
+    font-size:.8rem;color:var(--text-dim);font-variant-numeric:tabular-nums;
+  }
+  .study-head .prog-bar{flex:1;height:3px;border-radius:1.5px;background:var(--line);overflow:hidden;}
+  .study-head .prog-bar > span{display:block;height:100%;background:var(--accent);transition:width .3s;}
+
+  .card-stage{
+    flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
+    padding:8px 8px 30px 8px;perspective:1600px;position:relative;
+    touch-action:pan-y;
+  }
+  .flip{
+    width:100%;height:100%;
+    position:relative;transform-style:preserve-3d;
+    transition:transform .5s cubic-bezier(.2,.75,.25,1);
+    will-change:transform;
+    cursor:pointer;
+  }
+  .flip.flipped{transform:rotateY(180deg);}
+  .flip.swiping{transition:none;}
+  .face{
+    position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    border-radius:20px;padding:40px 32px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    border:1px solid var(--line);
+  }
+  .face .tag{
+    position:absolute;top:16px;left:20px;font-size:.7rem;font-weight:600;
+    letter-spacing:.08em;opacity:.6;
+  }
+  .face .hint{
+    position:absolute;bottom:16px;font-size:.75rem;opacity:.5;
+  }
+  .face .content{font-weight:600;overflow-y:auto;max-height:100%;width:100%;}
+  .front{
+    background:var(--paper);color:var(--paper-ink);
+  }
+  .front .tag{color:var(--text-dim);}
+  .front .content{font-size:clamp(2rem,8vw,3.5rem);}
+  .back{
+    background:var(--surface);color:var(--text);transform:rotateY(180deg);
+  }
+  .back .tag{color:var(--text-dim);}
+  .back .content{font-size:clamp(1.2rem,6vw,2.2rem);line-height:1.5;}
+
+  .swipe-ghost{
+    position:absolute;top:50%;transform:translateY(-50%);
+    font-size:.9rem;font-weight:600;padding:8px 12px;border-radius:8px;
+    opacity:0;transition:opacity .1s;pointer-events:none;z-index:5;
+  }
+  .swipe-ghost.left{left:20px;color:#ff6b6b;}
+  .swipe-ghost.right{right:20px;color:var(--accent);}
+
+  .study-foot{
+    display:flex;gap:10px;padding:8px 18px 12px;flex-shrink:0;
+    position:fixed;bottom:0;left:0;right:0;width:100%;
+    background:var(--ink);z-index:20;border-top:1px solid var(--line);
+  }
+  .sbtn{
+    flex:1;padding:16px 12px;min-height:56px;border-radius:12px;font-weight:600;font-size:1.3rem;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    border:1px solid var(--line);background:transparent;transition:all .15s;
+  }
+  .sbtn small{font-size:.75rem;color:var(--text-dim);}
+  .sbtn.again{color:var(--accent-light);border-color:var(--accent-light);}
+  .sbtn.known{background:var(--accent);color:#ffffff;border-color:var(--accent);}
+  .sbtn.known small{color:#ffffff;opacity:.8;}
+  .sbtn:active{opacity:.7;}
+
+  .study-tools{display:flex;gap:10px;padding:14px 18px;flex-shrink:0;}
+  .study-tools button{flex:1;font-size:.85rem;color:var(--text-dim);font-weight:600;padding:12px;min-height:44px;border-radius:8px;border:1.5px solid var(--text-dim);background:transparent;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+  .study-tools button:active{opacity:.7;}
+
+  .done{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:32px;gap:8px;
+  }
+  .done .ring{
+    width:100px;height:100px;border-radius:50%;margin-bottom:16px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.8rem;font-weight:700;
+    background:conic-gradient(var(--accent) var(--pct,0%),var(--surface) 0);
+    position:relative;
+  }
+  .done .ring::before{content:"";position:absolute;inset:8px;border-radius:50%;background:var(--ink);}
+  .done .ring span{position:relative;z-index:1;color:var(--accent);}
+  .done h2{font-size:1.3rem;font-weight:700;}
+  .done p{color:var(--text-dim);margin-bottom:16px;font-size:.9rem;}
+
+  /* ---------- Editor ---------- */
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:.8rem;font-weight:600;color:var(--text-dim);margin-bottom:6px;}
+  .input,.textarea{
+    width:100%;background:var(--surface);border:1px solid var(--line);
+    border-radius:8px;padding:12px;color:var(--text);outline:none;transition:border-color .15s;
+    font-size:16px;
+  }
+  .input{min-height:44px;}
+  .input:focus,.textarea:focus{border-color:var(--accent);}
+  .textarea{resize:vertical;min-height:120px;line-height:1.55;}
+  .row-card{
+    display:flex;gap:10px;margin-bottom:12px;align-items:center;
+  }
+  .row-card .num{
+    flex:0 0 32px;display:flex;align-items:center;justify-content:center;
+    font-size:.8rem;color:var(--text-dim);font-weight:700;font-variant-numeric:tabular-nums;
+  }
+  .row-card .inputs{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .row-card .inputs input{
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    padding:12px;color:var(--text);outline:none;min-height:44px;font-size:16px;
+  }
+  .row-card .inputs input:focus{border-color:var(--accent);}
+  .row-card .del{
+    flex:0 0 44px;min-height:44px;border-radius:10px;background:var(--surface);border:1px solid var(--line);
+    color:var(--text-dim);font-size:1.3rem;display:flex;align-items:center;justify-content:center;
+  }
+  .row-card .del:active{background:var(--line);color:var(--text);}
+  .add-row{
+    width:100%;min-height:44px;padding:12px;border-radius:12px;border:1.5px dashed var(--line);
+    color:var(--text-dim);font-weight:600;margin-top:8px;font-size:16px;
+  }
+  .add-row:active{border-color:var(--accent);color:var(--accent);background:rgba(85,85,85,0.1);}
+
+  .section-title{font-size:.82rem;font-weight:700;color:var(--text-dim);margin:24px 0 12px;letter-spacing:.02em;}
+  .bulk-hint{font-size:.8rem;color:var(--text-dim);line-height:1.6;margin-top:8px;}
+  .save-bar{
+    display:flex;gap:12px;padding:14px 18px;flex-shrink:0;
+    border-top:1px solid var(--line);background:var(--ink);
+  }
+  .save-bar .fab{box-shadow:none;min-height:44px;}
+
+  /* ---------- Modal ---------- */
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(0,0,0,.5);
+    display:flex;align-items:flex-end;justify-content:center;z-index:100;
+    opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  .modal-bg.show{opacity:1;pointer-events:auto;}
+  .modal{
+    width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);
+    border-radius:16px 16px 0 0;padding:20px calc(20px + env(safe-area-inset-bottom));
+    transform:translateY(16px);transition:transform .2s;
+  }
+  .modal-bg.show .modal{transform:translateY(0);}
+  .modal h3{font-size:1rem;font-weight:700;margin-bottom:8px;}
+  .modal p{font-size:.9rem;color:var(--text-dim);margin-bottom:16px;line-height:1.5;}
+  .modal .btns{display:flex;gap:10px;margin-top:20px;}
+  .modal .btns button{flex:1;padding:14px;min-height:44px;border-radius:8px;font-weight:600;font-size:.9rem;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;}
+  .modal .btns .cancel{background:transparent;color:var(--text);}
+  .modal .btns .confirm{background:var(--accent);color:#000;border-color:var(--accent);}
+  .modal .btns .danger{background:var(--accent-light);color:#000;border-color:var(--accent-light);}
+
+  .toast{
+    position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(16px);
+    background:var(--surface);color:var(--text);border:1px solid var(--line);
+    padding:11px 16px;border-radius:8px;font-size:.85rem;font-weight:600;
+    opacity:0;pointer-events:none;transition:all .2s;z-index:200;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---------- Radio & Checkbox ---------- */
+  input[type="radio"],input[type="checkbox"]{
+    width:20px;height:20px;cursor:pointer;accent-color:var(--accent);
+  }
+  label{
+    user-select:none;-webkit-user-select:none;
+  }
+
+  .hidden{display:none !important;}
+  ::-webkit-scrollbar{width:0;height:0;}
+</style>
+</head>
+<body>
+
+<!-- ============ DECK LIST SCREEN ============ -->
+<div id="screen-decks" class="screen-wrap">
+  <div class="topbar">
+    <h1><span class="mark">📚</span>카드학습</h1>
+    <span class="sub" id="deckCount"></span>
+    <button class="icon-btn" onclick="show('stats')" title="통계">📊</button>
+    <button class="icon-btn" onclick="show('settings')" title="설정">⚙️</button>
+  </div>
+  <div class="screen">
+    <div class="pad" id="deckList"></div>
+  </div>
+  <div class="fab-row">
+    <button class="fab" onclick="openEditor(null)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      새 덱 만들기
+    </button>
+    <button class="fab secondary" id="folderBtn" onclick="createFolder()" title="폴더 만들기">
+      📁
+    </button>
+    <button class="fab secondary" onclick="triggerImport()" title="가져오기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ============ STUDY START SCREEN (방향·모드 선택) ============ -->
+<div id="screen-study-start" class="screen-wrap hidden">
+  <div class="topbar">
+    <button class="back-btn" onclick="goDecks()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      취소
+    </button>
+    <span class="sub" id="startDeckName"></span>
+  </div>
+  <div class="screen">
+    <div class="pad">
+      <div class="section-title">학습 방향</div>
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:28px;">
+        <label style="display:flex; align-items:center; gap:16px; cursor:pointer; padding:12px; background:var(--surface); border-radius:10px; border:1px solid var(--line); min-height:48px;">
+          <input type="radio" name="direction" value="forward" checked> <span style="font-size:1rem;">정방향 (앞→뒤)</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:16px; cursor:pointer; padding:12px; background:var(--surface); border-radius:10px; border:1px solid var(--line); min-height:48px;">
+          <input type="radio" name="direction" value="reverse"> <span style="font-size:1rem;">역방향 (뒤→앞)</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:16px; cursor:pointer; padding:12px; background:var(--surface); border-radius:10px; border:1px solid var(--line); min-height:48px;">
+          <input type="radio" name="direction" value="random"> <span style="font-size:1rem;">랜덤</span>
+        </label>
+      </div>
+
+      <div class="section-title">학습 모드</div>
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:28px;">
+        <label style="display:flex; align-items:center; gap:16px; cursor:pointer; padding:12px; background:var(--surface); border-radius:10px; border:1px solid var(--line); min-height:48px;">
+          <input type="radio" name="mode" value="weak" checked> <span style="font-size:1rem;">약점 집중</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:16px; cursor:pointer; padding:12px; background:var(--surface); border-radius:10px; border:1px solid var(--line); min-height:48px;">
+          <input type="radio" name="mode" value="review"> <span style="font-size:1rem;">오늘 복습</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:16px; cursor:pointer; padding:12px; background:var(--surface); border-radius:10px; border:1px solid var(--line); min-height:48px;">
+          <input type="radio" name="mode" value="all"> <span style="font-size:1rem;">전체 순회</span>
+        </label>
+      </div>
+    </div>
+  </div>
+  <div class="save-bar">
+    <button class="fab" onclick="confirmStudyStart()">학습 시작</button>
+  </div>
+</div>
+
+<!-- ============ STUDY SCREEN ============ -->
+<div id="screen-study" class="screen-wrap hidden">
+  <div class="topbar">
+    <button class="back-btn" onclick="goDecks()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      끝내기
+    </button>
+    <span class="sub" id="studyDeckName"></span>
+  </div>
+  <div class="study-tools">
+    <button onclick="shuffleStudy()">섞기</button>
+    <button onclick="restartStudy()">처음부터</button>
+    <button onclick="editCurrentCard()">편집</button>
+  </div>
+  <div class="study-head">
+    <span id="studyPos">1 / 1</span>
+    <div class="prog-bar"><span id="studyProg" style="width:0%"></span></div>
+  </div>
+  <div class="card-stage" id="cardStage">
+    <div class="swipe-ghost left" id="ghostLeft">다시 ✕</div>
+    <div class="swipe-ghost right" id="ghostRight">✓ 알아요</div>
+    <div class="flip" id="flip">
+      <div class="face front">
+        <span class="tag" id="frontTag">용어</span>
+        <div class="content" id="frontText"></div>
+        <span class="hint">탭하면 뒤집혀요</span>
+      </div>
+      <div class="face back">
+        <span class="tag">뜻</span>
+        <div class="content" id="backText"></div>
+        <span class="hint">← 다시 · 알아요 →</span>
+      </div>
+    </div>
+  </div>
+  <div class="study-foot">
+    <button class="sbtn again" onclick="markCard(false)">다시<small>왼쪽으로 밀기</small></button>
+    <button class="sbtn known" onclick="markCard(true)">알아요<small>오른쪽으로 밀기</small></button>
+  </div>
+
+  <!-- done overlay -->
+  <div class="done hidden" id="studyDone">
+    <div class="ring" id="doneRing"><span id="donePct">0%</span></div>
+    <h2>한 바퀴 완료!</h2>
+    <p id="doneMsg"></p>
+    <div class="fab-row" style="width:100%;max-width:320px;">
+      <button class="fab" onclick="restartStudy()">다시 학습</button>
+      <button class="fab secondary" onclick="studyOnlyUnknown()" style="flex:1;">모르는 것만</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ EDITOR SCREEN ============ -->
+<div id="screen-editor" class="screen-wrap hidden">
+  <div class="topbar">
+    <button class="back-btn" onclick="goDecks()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      취소
+    </button>
+    <span class="sub" id="editorTitle">새 덱</span>
+  </div>
+  <div class="screen">
+    <div class="pad">
+      <div class="field">
+        <label>덱 이름</label>
+        <input class="input" id="deckName" placeholder="예: IT 기획 용어">
+      </div>
+
+      <div class="field">
+        <label>폴더</label>
+        <select class="input" id="deckFolder">
+          <option value="">폴더 없음</option>
+        </select>
+      </div>
+
+      <div class="section-title">카드</div>
+      <div id="cardRows"></div>
+      <button class="add-row" onclick="addCardRow()">+ 카드 추가</button>
+
+      <div class="section-title">여러 개 한번에 붙여넣기</div>
+      <textarea class="textarea" id="bulkInput" placeholder="용어 [탭 또는 쉼표] 뜻&#10;한 줄에 하나씩&#10;&#10;예)&#10;API,서로 다른 프로그램이 소통하는 규약&#10;MVP,핵심 기능만 담은 최소 제품"></textarea>
+      <button class="chip" style="margin-top:10px;" onclick="applyBulk()">붙여넣은 내용 카드로 추가</button>
+      <p class="bulk-hint">각 줄을 <b>탭</b> 또는 <b>쉼표</b> 기준으로 앞면·뒷면으로 나눠요. 엑셀·시트에서 복사한 표도 그대로 붙여넣을 수 있어요.</p>
+    </div>
+  </div>
+  <div class="save-bar">
+    <button class="fab secondary" id="deleteDeckBtn" onclick="confirmDeleteDeck()" style="display:none;color:var(--rose);">삭제</button>
+    <button class="fab" onclick="saveDeck()">저장</button>
+  </div>
+</div>
+
+<!-- ============ STATS SCREEN ============ -->
+<div id="screen-stats" class="screen-wrap hidden">
+  <div class="topbar">
+    <button class="back-btn" onclick="goDecks()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      돌아가기
+    </button>
+    <span class="sub">통계</span>
+  </div>
+  <div class="screen">
+    <div class="pad">
+      <div class="section-title">오늘 학습</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div style="background:var(--surface);padding:16px;border-radius:12px;border:1px solid var(--line);">
+          <div style="color:var(--text-dim);font-size:.85rem;margin-bottom:6px;">학습한 카드</div>
+          <div style="font-size:1.8rem;font-weight:700;" id="todayTotal">0</div>
+        </div>
+        <div style="background:var(--surface);padding:16px;border-radius:12px;border:1px solid var(--line);">
+          <div style="color:var(--text-dim);font-size:.85rem;margin-bottom:6px;">정답률</div>
+          <div style="font-size:1.8rem;font-weight:700;" id="todayRate">0%</div>
+        </div>
+      </div>
+
+      <div class="section-title">복습 진도</div>
+      <div id="reviewProgress"></div>
+
+      <div class="section-title">최근 7일</div>
+      <div id="weekStats" style="height:200px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS SCREEN ============ -->
+<div id="screen-settings" class="screen-wrap hidden">
+  <div class="topbar">
+    <button class="back-btn" onclick="goDecks()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      돌아가기
+    </button>
+    <span class="sub">설정</span>
+  </div>
+  <div class="screen">
+    <div class="pad">
+      <div id="reviewTimeSettings"></div>
+
+      <div class="section-title">데이터</div>
+      <button class="chip" onclick="exportData()" style="width:100%;margin-bottom:8px;">백업 (내보내기)</button>
+      <button class="chip" onclick="triggerDataImport()" style="width:100%;">복구 (가져오기)</button>
+      <input type="file" id="dataImportInput" accept="application/json" class="hidden" onchange="importData()">
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle"></h3>
+    <p id="modalBody"></p>
+    <div class="btns" id="modalBtns"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="fileInput" accept="application/json,.json" class="hidden">
+
+<script>
+"use strict";
+const STORE_KEY = "cardlearn.decks.v2";
+const V1_STORE_KEY = "cardlearn.decks.v1";
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+/* Leitner 설정 */
+const LEITNER_CONFIG = {
+  boxes: [
+    { box: 1, intervalDays: 0 },    // 매 세션
+    { box: 2, intervalDays: 1 },    // 1일 뒤
+    { box: 3, intervalDays: 3 },    // 3일 뒤
+    { box: 4, intervalDays: 7 },    // 7일 뒤
+    { box: 5, intervalDays: 16 }    // 16일 뒤
+  ]
+};
+
+function getBoxConfig(box){ return LEITNER_CONFIG.boxes.find(b=>b.box===box) || LEITNER_CONFIG.boxes[0]; }
+
+function getNextReviewTime(lastSeen, box){
+  const config = getBoxConfig(box);
+  return lastSeen + (config.intervalDays * 24 * 60 * 60 * 1000);
+}
+
+function isReviewDue(card, today = Date.now()){
+  const nextReview = getNextReviewTime(card.lastSeen, card.box);
+  return nextReview <= today;
+}
+
+/* ---------- data ---------- */
+function seedAppState(){
+  const baseDeck = [
+    { id: uid(), name: "IT 기획 용어 (샘플)", folderId: null, cards: [
+      {f:"MVP", b:"Minimum Viable Product. 핵심 기능만 담아 빠르게 검증하는 최소 기능 제품", box:1, lastSeen:0, boxRev:1, lastSeenRev:0},
+      {f:"API", b:"Application Programming Interface. 서로 다른 프로그램이 정해진 규약으로 데이터를 주고받는 창구", box:1, lastSeen:0, boxRev:1, lastSeenRev:0},
+      {f:"애자일(Agile)", b:"짧은 주기로 만들고 피드백받아 계속 개선하는 반복적 개발 방식", box:1, lastSeen:0, boxRev:1, lastSeenRev:0},
+      {f:"워터폴(Waterfall)", b:"기획→설계→개발→테스트를 순서대로 진행하는 단계형 개발 방식", box:1, lastSeen:0, boxRev:1, lastSeenRev:0},
+      {f:"더블 다이아몬드", b:"발견-정의-개발-전달의 4단계로 문제를 넓혔다 좁히길 반복하는 기획 프레임워크", box:1, lastSeen:0, boxRev:1, lastSeenRev:0},
+    ]},
+    { id: uid(), name: "투자 용어 (샘플)", folderId: null, cards: [
+      {f:"ISA", b:"개인종합자산관리계좌. 이자·배당 등에 세제 혜택을 주는 절세 계좌", box:1, lastSeen:0, boxRev:1, lastSeenRev:0},
+      {f:"패시브 투자", b:"지수(인덱스)를 그대로 따라가 시장 평균 수익을 노리는 소극적 투자 전략", box:1, lastSeen:0, boxRev:1, lastSeenRev:0},
+      {f:"배당주", b:"이익 일부를 주주에게 현금으로 나눠 주는, 배당 수익이 목적인 주식", box:1, lastSeen:0, boxRev:1, lastSeenRev:0},
+      {f:"IRP", b:"개인형 퇴직연금. 노후 자금을 모으며 세액공제를 받는 연금 계좌", box:1, lastSeen:0, boxRev:1, lastSeenRev:0},
+    ]},
+  ];
+  const today = new Date().toISOString().split('T')[0];
+  return {
+    version: 4,
+    decks: baseDeck,
+    folders: [],
+    lastUsedDeckId: null,
+    learningHistory: {
+      [today]: { totalCards: 0, correctCards: 0 }
+    },
+    notificationTimes: [
+      { time: "09:00", enabled: true },
+      { time: "12:00", enabled: true },
+      { time: "15:00", enabled: true },
+      { time: "18:00", enabled: true },
+      { time: "21:00", enabled: true }
+    ]
+  };
+}
+
+function migrateV1toV2(v1Decks){
+  return v1Decks.map(d=>({
+    ...d,
+    cards: d.cards.map(c=>({
+      f: c.f,
+      b: c.b,
+      box: c.known ? 4 : 1,
+      lastSeen: 0,
+      boxRev: 1,
+      lastSeenRev: 0
+    }))
+  }));
+}
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw){
+      const data = JSON.parse(raw);
+      // v2 형식 (배열)을 v3으로 마이그레이션
+      if(Array.isArray(data)){
+        const v3Data = migrateV2toV3(data);
+        return migrateV3toV4(v3Data);
+      }
+      // v3을 v4로 마이그레이션
+      if(data.version === 3){
+        return migrateV3toV4(data);
+      }
+      // v4 형식이어도 notificationTimes 확인
+      if(data.version === 4){
+        if(!data.notificationTimes){
+          data.notificationTimes = [
+            { time: "09:00", enabled: true },
+            { time: "12:00", enabled: true },
+            { time: "15:00", enabled: true },
+            { time: "18:00", enabled: true },
+            { time: "21:00", enabled: true }
+          ];
+        }
+        return data;
+      }
+      return data;
+    }
+
+    const v1Raw = localStorage.getItem(V1_STORE_KEY);
+    if(v1Raw){
+      const v1Decks = JSON.parse(v1Raw);
+      const v2Decks = migrateV1toV2(v1Decks);
+      const v3Data = migrateV2toV3(v2Decks);
+      const v4Data = migrateV3toV4(v3Data);
+      saveAppState(v4Data);
+      localStorage.removeItem(V1_STORE_KEY);
+      return v4Data;
+    }
+
+    const s = seedAppState();
+    saveAppState(s);
+    return s;
+  }catch(e){
+    console.error("데이터 로드 실패:", e);
+    return seedAppState();
+  }
+}
+
+function migrateV2toV3(v2Decks){
+  return {
+    version: 3,
+    decks: v2Decks.map(d => ({...d, folderId: null})),
+    folders: [],
+    lastUsedDeckId: null
+  };
+}
+
+function migrateV3toV4(v3State){
+  const today = new Date().toISOString().split('T')[0];
+
+  // 기존 reviewTimes을 새로운 notificationTimes 구조로 변환
+  let notificationTimes = [
+    { time: "09:00", enabled: true },
+    { time: "12:00", enabled: true },
+    { time: "15:00", enabled: true },
+    { time: "18:00", enabled: true },
+    { time: "21:00", enabled: true }
+  ];
+
+  if(v3State.reviewTimes && Array.isArray(v3State.reviewTimes)){
+    notificationTimes = v3State.reviewTimes.map(time => ({time, enabled: true}));
+  } else if(v3State.notificationTimes){
+    notificationTimes = v3State.notificationTimes;
+  }
+
+  return {
+    ...v3State,
+    version: 4,
+    learningHistory: v3State.learningHistory || {
+      [today]: { totalCards: 0, correctCards: 0 }
+    },
+    notificationTimes
+  };
+}
+
+function saveAppState(data){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  }catch(e){
+    toast("저장 공간이 부족해요");
+    console.error("저장 실패:", e);
+  }
+}
+
+let appState = load();
+let decks = appState.decks;
+let folders = appState.folders;
+let lastUsedDeckId = appState.lastUsedDeckId;
+let currentFolderId = null; // 현재 보고 있는 폴더 (null이면 메인)
+
+// 헬퍼: decks 변경 후 저장
+function save(d){
+  decks = d;
+  saveAppState({
+    version: 4,
+    decks,
+    folders,
+    lastUsedDeckId,
+    learningHistory: appState.learningHistory,
+    notificationTimes: appState.notificationTimes
+  });
+}
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => (s||"").replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),1800); }
+function masteredCount(deck){ return deck.cards.filter(c=>c.box>=2).length; }
+
+/* ---------- screens ---------- */
+function show(name){
+  ["decks","study-start","study","editor","stats","settings"].forEach(n=>$("screen-"+n).classList.toggle("hidden", n!==name));
+  if(name === "stats") renderStats();
+  if(name === "settings") renderSettings();
+}
+function goDecks(){
+  show("decks");
+  appState = load();
+  decks = appState.decks;
+  folders = appState.folders;
+  lastUsedDeckId = appState.lastUsedDeckId;
+  currentFolderId = null;
+  renderDecks();
+  study.direction = null;
+  study.mode = null;
+}
+
+/* ---------- deck list ---------- */
+function renderDecks(){
+  const list = $("deckList");
+  $("folderBtn").style.display = currentFolderId ? "none" : "flex"; // 폴더 내에서 폴더만들기 숨기기
+
+  // 폴더 내부 보기
+  if(currentFolderId){
+    const folder = folders.find(f => f.id === currentFolderId);
+    if(!folder){ currentFolderId = null; return renderDecks(); }
+
+    const folderDecks = decks.filter(d => d.folderId === currentFolderId);
+    $("deckCount").textContent = folder.name;
+
+    const deckHTML = (d) => {
+      const total=d.cards.length, mastered=masteredCount(d);
+      const pct = total? Math.round(mastered/total*100):0;
+      return `<div class="deck" style="position:relative;cursor:pointer;" onclick="startStudy('${d.id}')">
+        <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;z-index:10;">
+          <button class="top-btn" onclick="event.stopPropagation();openFolderSelect('${d.id}')" title="폴더 이동">📁</button>
+          <button class="top-btn" onclick="event.stopPropagation();confirmDeleteDeck('${d.id}')" title="덱 삭제">🗑️</button>
+        </div>
+        <h2>${esc(d.name)}</h2>
+        <div class="meta"><span>${total}장</span><span class="known">✓ ${mastered} 익힘</span><span>${pct}%</span></div>
+        <div class="bar"><span style="width:${pct}%"></span></div>
+        <div class="actions">
+          <button class="chip primary" onclick="event.stopPropagation();startStudy('${d.id}')">학습</button>
+          <button class="chip" onclick="event.stopPropagation();openEditor('${d.id}')">편집</button>
+          <button class="chip ghost" onclick="event.stopPropagation();exportDeck('${d.id}')">내보내기</button>
+        </div>
+      </div>`;
+    };
+
+    let html = `<div style="padding:8px 18px;"><button class="chip" onclick="currentFolderId=null;renderDecks();">← 돌아가기</button></div>`;
+
+    if(folderDecks.length){
+      html += folderDecks.map(d => deckHTML(d)).join("");
+    }else{
+      html += `<div class="empty"><div class="big">📂</div><p><b>${esc(folder.name)}</b><br>아직 덱이 없어요.</p></div>`;
+    }
+
+    list.innerHTML = html;
+    return;
+  }
+
+  // 메인 화면 - 최근 덱과 폴더만 표시
+
+  const deckHTML = (d, isRecent=false) => {
+    const total=d.cards.length, mastered=masteredCount(d);
+    const pct = total? Math.round(mastered/total*100):0;
+    return `<div class="deck" ${isRecent ? 'style="border:1.5px solid var(--accent-light);position:relative;cursor:pointer;"' : 'style="position:relative;cursor:pointer;"'} onclick="startStudy('${d.id}')">
+      <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;z-index:10;">
+        <button class="top-btn" onclick="event.stopPropagation();openFolderSelect('${d.id}')" title="폴더 이동">📁</button>
+        <button class="top-btn" onclick="event.stopPropagation();confirmDeleteDeck('${d.id}')" title="덱 삭제">🗑️</button>
+      </div>
+      ${isRecent ? '<span style="font-size:.7rem;color:var(--accent-light);margin-bottom:8px;display:block;">최근 학습</span>' : ''}
+      <h2>${esc(d.name)}</h2>
+      <div class="meta"><span>${total}장</span><span class="known">✓ ${mastered} 익힘</span><span>${pct}%</span></div>
+      <div class="bar"><span style="width:${pct}%"></span></div>
+      <div class="actions">
+        <button class="chip primary" onclick="event.stopPropagation();startStudy('${d.id}')">학습</button>
+        <button class="chip" onclick="event.stopPropagation();openEditor('${d.id}')">편집</button>
+        <button class="chip ghost" onclick="event.stopPropagation();exportDeck('${d.id}')">내보내기</button>
+      </div>
+    </div>`;
+  };
+
+  const folderHTML = (f) => `<div class="deck" style="cursor:pointer;opacity:.9;position:relative;" onclick="currentFolderId='${f.id}';renderDecks();">
+    <div style="position:absolute;top:8px;right:8px;z-index:10;">
+      <button class="top-btn" onclick="event.stopPropagation();deleteFolder('${f.id}')" title="폴더 삭제">🗑️</button>
+    </div>
+    <h2>📁 ${esc(f.name)}</h2>
+    <div class="meta"><span>${decks.filter(d=>d.folderId===f.id).length}개 덱</span></div>
+  </div>`;
+
+  let html = '';
+
+  // 최근 덱
+  if(lastUsedDeckId){
+    const recent = decks.find(d => d.id === lastUsedDeckId);
+    if(recent) html += deckHTML(recent, true);
+  }
+
+  // 폴더들만 표시 (폴더 없는 덱은 숨김)
+  if(folders.length){
+    html += `<div style="margin-top:16px;"><span style="font-size:.8rem;color:var(--text-dim);margin-left:18px;display:block;margin-bottom:8px;">폴더</span></div>` + folders.map(f => folderHTML(f)).join("");
+  }
+
+  if(!html){
+    list.innerHTML = `<div class="empty"><div class="big">📚</div><p>아직 덱이 없어요.<br>아래 <b>새 덱 만들기</b>로 시작해 보세요.</p></div>`;
+    return;
+  }
+
+  list.innerHTML = html;
+}
+
+/* ============ STUDY ============ */
+let study = { deckId:null, order:[], idx:0, flipped:false, sessionJudgments:{}, direction:'forward', mode:null };
+
+function startStudy(id, subset){
+  const deck = decks.find(d=>d.id===id);
+  if(!deck || !deck.cards.length){ toast("카드가 없어요. 먼저 카드를 추가하세요."); return; }
+  lastUsedDeckId = id;
+  saveAppState({...appState, version: 4, decks, folders, lastUsedDeckId});
+  study.deckId = id;
+  study.subset = subset;
+
+  // 이미 방향/모드가 선택되어 있으면 바로 학습 시작
+  if(study.direction && study.mode){
+    confirmStudyStart();
+    return;
+  }
+
+  // 처음이면 선택 화면 표시
+  $("startDeckName").textContent = deck.name;
+  show("study-start");
+}
+
+function confirmStudyStart(){
+  const direction = document.querySelector('input[name="direction"]:checked').value;
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  console.log("선택된 모드:", mode, "선택된 방향:", direction);
+  study.direction = direction;
+  study.mode = mode;
+
+  const deck = decks.find(d=>d.id===study.deckId);
+  let cardIndices = study.subset || deck.cards.map((_,i)=>i);
+  console.log("필터링 전 카드 수:", cardIndices.length);
+
+  // 모드별 카드 필터링
+  if(mode === 'review'){
+    const today = Date.now();
+    cardIndices = cardIndices.filter(i => isReviewDue(deck.cards[i], today));
+    console.log("review 필터링 후 카드 수:", cardIndices.length);
+    if(!cardIndices.length){
+      toast("오늘 복습할 카드가 없어요. 약점 집중을 추천합니다.");
+      return;
+    }
+  }else if(mode === 'weak'){
+    cardIndices.sort((a,b) => (deck.cards[a].box||1) - (deck.cards[b].box||1));
+    console.log("weak 정렬 후 카드:", cardIndices.map(i => ({idx:i, box: deck.cards[i].box})));
+  }
+
+  study.order = cardIndices.slice();
+
+  if(study.direction === 'random'){
+    for(let i=study.order.length-1; i>0; i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [study.order[i],study.order[j]]=[study.order[j],study.order[i]];
+    }
+  }
+
+  study.idx = 0; study.flipped=false;
+  study.sessionJudgments = {};
+  $("studyDeckName").textContent = deck.name;
+  $("studyDone").classList.add("hidden");
+  document.querySelector(".study-foot").style.display="flex";
+  document.querySelector(".study-tools").style.display="flex";
+  show("study");
+  renderCard();
+}
+function currentDeck(){ return decks.find(d=>d.id===study.deckId); }
+function currentCard(){ const d=currentDeck(); return d ? d.cards[ study.order[study.idx] ] : null; }
+
+function renderCard(){
+  const deck=currentDeck(); const card=currentCard();
+  if(!card){ return; }
+
+  const isReverse = study.direction === 'reverse';
+  $("frontText").textContent = isReverse ? card.b : card.f;
+  $("backText").textContent = isReverse ? card.f : card.b;
+  $("frontTag").textContent = isReverse ? "뜻" : "용어";
+
+  study.flipped=false;
+  const flip=$("flip"); flip.classList.remove("flipped","swiping"); flip.style.transform="";
+  $("studyPos").textContent = (study.idx+1)+" / "+study.order.length;
+  $("studyProg").style.width = ((study.idx)/study.order.length*100)+"%";
+}
+function flipCard(){
+  if(!study) study = {};
+  study.flipped = !study.flipped;
+  const flip = $("flip");
+  if(!flip) return;
+  flip.style.transform = ""; // inline style 제거
+  if(study.flipped){
+    flip.classList.add("flipped");
+  }else{
+    flip.classList.remove("flipped");
+  }
+}
+
+function markCard(isLearned){
+  const card=currentCard();
+  const cardIdx = study.order[study.idx];
+
+  if(card){
+    if(isLearned){
+      card.box = Math.min((card.box||1)+1, 5);
+    }else{
+      card.box = 1;
+    }
+    card.lastSeen = Date.now();
+    study.sessionJudgments[cardIdx] = { isLearned, timestamp: Date.now() };
+    save(decks);
+  }
+  next();
+}
+function next(){
+  if(study.idx < study.order.length-1){ study.idx++; renderCard(); }
+  else finishStudy();
+}
+function finishStudy(){
+  const deck=currentDeck();
+  const mastered=masteredCount(deck), total=deck.cards.length;
+  const pct= total?Math.round(mastered/total*100):0;
+
+  // 이번 세션 성적
+  const sessionCorrect = Object.values(study.sessionJudgments).filter(j=>j.isLearned).length;
+  const sessionTotal = Object.keys(study.sessionJudgments).length;
+
+  // 학습 기록 저장
+  const today = new Date().toISOString().split('T')[0];
+  if(!appState.learningHistory) appState.learningHistory = {};
+  if(!appState.learningHistory[today]) appState.learningHistory[today] = { totalCards: 0, correctCards: 0 };
+  appState.learningHistory[today].totalCards += sessionTotal;
+  appState.learningHistory[today].correctCards += sessionCorrect;
+  saveAppState(appState);
+
+  $("studyProg").style.width="100%";
+  $("donePct").textContent=pct+"%";
+  $("doneRing").style.setProperty("--pct",pct+"%");
+
+  let msg = `${total}장 중 ${mastered}장을 익혔어요.`;
+  if(sessionTotal > 0){
+    msg += `\n이번 세션: ${sessionCorrect}/${sessionTotal}장 학습`;
+  }
+  $("doneMsg").textContent = msg;
+
+  $("studyDone").classList.remove("hidden");
+  document.querySelector(".study-foot").style.display="none";
+  document.querySelector(".study-tools").style.display="none";
+}
+function restartStudy(){ startStudy(study.deckId); }
+function studyOnlyUnknown(){
+  const deck=currentDeck();
+  const subset = deck.cards.map((c,i)=>c.box<2?i:null).filter(i=>i!==null);
+  if(!subset.length){ toast("모든 카드를 익혔어요! 🎉"); return; }
+  startStudy(study.deckId, subset);
+}
+function shuffleStudy(){
+  for(let i=study.order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [study.order[i],study.order[j]]=[study.order[j],study.order[i]]; }
+  study.idx=0; renderCard(); toast("카드를 섞었어요");
+}
+function editCurrentCard(){ openEditor(study.deckId); }
+
+/* ---- tap + swipe on card ---- */
+(function(){
+  const stage=$("cardStage"); const flip=$("flip");
+  let startX=0,startY=0,dx=0,dragging=false,moved=false;
+  stage.addEventListener("touchstart",e=>{
+    if($("studyDone").classList.contains("hidden")===false) return;
+    startX=e.touches[0].clientX; startY=e.touches[0].clientY; dx=0; dragging=true; moved=false;
+    flip.classList.add("swiping");
+  },{passive:true});
+  stage.addEventListener("touchmove",e=>{
+    if(!dragging) return;
+    dx=e.touches[0].clientX-startX; const dy=e.touches[0].clientY-startY;
+    if(Math.abs(dx)>25||Math.abs(dy)>25) moved=true;
+    if(Math.abs(dx) > Math.abs(dy)){
+      const rot = study.flipped?180:0;
+      flip.style.transform=`translateX(${dx}px) rotate(${dx/25}deg) rotateY(${rot}deg)`;
+      $("ghostRight").style.opacity = dx>40? Math.min((dx-40)/60,1):0;
+      $("ghostLeft").style.opacity = dx<-40? Math.min((-dx-40)/60,1):0;
+    }
+  },{passive:true});
+  stage.addEventListener("touchend",()=>{
+    if(!dragging) return; dragging=false;
+    flip.classList.remove("swiping");
+    $("ghostRight").style.opacity=0; $("ghostLeft").style.opacity=0;
+    const absDx = Math.abs(dx);
+
+    // 스와이프: 150px 이상 움직임 → 카드 변경
+    if(absDx > 150){
+      if(dx > 0){ flingOut(1); }
+      else{ flingOut(-1); }
+      flip.style.transform="";
+      return;
+    }
+
+    // 탭: 150px 미만 → 뒤집기
+    flipCard();
+    flip.style.transform="";
+  });
+  function flingOut(dir){
+    flip.style.transition="transform .28s ease";
+    const rot = study.flipped?"rotateY(180deg)":"";
+    flip.style.transform=`translateX(${dir*140}%) rotate(${dir*18}deg) ${rot}`;
+    setTimeout(()=>{ flip.style.transition=""; markCard(dir>0); },200);
+  }
+})();
+// keyboard (desktop convenience)
+document.addEventListener("keydown",e=>{
+  if($("screen-study").classList.contains("hidden")) return;
+  if($("studyDone").classList.contains("hidden")===false) return;
+  if(e.code==="Space"){ e.preventDefault(); flipCard(); }
+  if(e.code==="ArrowRight") markCard(true);
+  if(e.code==="ArrowLeft") markCard(false);
+});
+
+/* ============ EDITOR ============ */
+let editing = { id:null, folderId:null };
+function openEditor(id){
+  editing.id = id;
+  editing.folderId = currentFolderId; // 현재 폴더 저장
+  const deck = id ? decks.find(d=>d.id===id) : null;
+  $("editorTitle").textContent = deck? "덱 편집" : "새 덱";
+  $("deckName").value = deck? deck.name : "";
+  $("bulkInput").value = "";
+  $("deleteDeckBtn").style.display = deck? "flex":"none";
+
+  // 폴더 드롭다운 채우기
+  const folderSelect = $("deckFolder");
+  folderSelect.innerHTML = `<option value="">폴더 없음</option>`;
+  folders.forEach(f => {
+    const opt = document.createElement("option");
+    opt.value = f.id;
+    opt.textContent = f.name;
+    folderSelect.appendChild(opt);
+  });
+  folderSelect.value = deck?.folderId || currentFolderId || "";
+
+  const rows=$("cardRows"); rows.innerHTML="";
+  const cards = deck? deck.cards : [];
+  if(cards.length){ cards.forEach(c=>addCardRow(c.f,c.b,c.box,c.lastSeen,c.boxRev,c.lastSeenRev)); }
+  else { addCardRow(); addCardRow(); }
+  show("editor");
+  $("screen-editor").querySelector(".screen").scrollTop=0;
+}
+function addCardRow(f="",b="",box=1,lastSeen=0,boxRev=1,lastSeenRev=0){
+  const rows=$("cardRows");
+  const n = rows.children.length+1;
+  const div=document.createElement("div");
+  div.className="row-card";
+  div.dataset.box=box; div.dataset.lastSeen=lastSeen; div.dataset.boxRev=boxRev; div.dataset.lastSeenRev=lastSeenRev;
+  div.innerHTML=`<div class="num">${n}</div>
+    <div class="inputs">
+      <input class="cf" placeholder="앞면 · 용어" value="${esc(f).replace(/"/g,'&quot;')}">
+      <input class="cb" placeholder="뒷면 · 뜻" value="${esc(b).replace(/"/g,'&quot;')}">
+    </div>
+    <button class="del" onclick="this.parentElement.remove();renumber();">×</button>`;
+  rows.appendChild(div);
+}
+function renumber(){ [...$("cardRows").children].forEach((r,i)=>r.querySelector(".num").textContent=i+1); }
+function applyBulk(){
+  const raw=$("bulkInput").value.trim();
+  if(!raw){ toast("붙여넣은 내용이 없어요"); return; }
+  let added=0;
+  raw.split(/\r?\n/).forEach(line=>{
+    if(!line.trim()) return;
+    let parts = line.includes("\t") ? line.split("\t") : line.split(/,(.+)/);
+    const f=(parts[0]||"").trim(); const b=(parts[1]||"").trim();
+    if(f){ addCardRow(f,b); added++; }
+  });
+  $("bulkInput").value="";
+  toast(added+"장 추가됨");
+}
+function saveDeck(){
+  const name=$("deckName").value.trim() || "이름 없는 덱";
+  const folderId = $("deckFolder").value || null;
+  const cards=[...$("cardRows").children].map(r=>({
+    f:r.querySelector(".cf").value.trim(),
+    b:r.querySelector(".cb").value.trim(),
+    box: parseInt(r.dataset.box)||1,
+    lastSeen: parseInt(r.dataset.lastSeen)||0,
+    boxRev: parseInt(r.dataset.boxRev)||1,
+    lastSeenRev: parseInt(r.dataset.lastSeenRev)||0
+  })).filter(c=>c.f || c.b);
+  if(!cards.length){ toast("카드를 하나 이상 추가하세요"); return; }
+  if(editing.id){
+    const d=decks.find(x=>x.id===editing.id);
+    d.name=name; d.cards=cards; d.folderId=folderId;
+  }else{
+    decks.unshift({id:uid(),name,cards,folderId});
+  }
+  save(decks); goDecks(); toast("저장했어요");
+}
+function confirmDeleteDeck(deckId){
+  const targetId = deckId || editing.id;
+  const d=decks.find(x=>x.id===targetId); if(!d) return;
+  const willClose = !deckId; // 카드에서 호출되면 false, 편집에서 호출되면 true
+  modal("덱 삭제","'"+d.name+"' 덱과 카드를 모두 지울까요? 되돌릴 수 없어요.",[
+    {t:"취소",c:"cancel"},
+    {t:"삭제",c:"danger",fn:()=>{ decks=decks.filter(x=>x.id!==targetId); save(decks); willClose? goDecks() : renderDecks(); toast("삭제했어요"); }}
+  ]);
+}
+
+/* ============ FOLDERS ============ */
+function createFolder(){
+  const name = prompt("폴더 이름을 입력하세요:");
+  if(!name || !name.trim()) return;
+  folders.push({id: uid(), name: name.trim()});
+  saveAppState({...appState, version: 4, decks, folders, lastUsedDeckId});
+  renderDecks();
+  toast("폴더를 만들었어요");
+}
+
+function openFolderSelect(deckId){
+  const deck = decks.find(d => d.id === deckId);
+  if(!deck) return;
+
+  const btns = [
+    {t:"취소",c:"cancel"}
+  ];
+
+  // 각 폴더 옵션
+  folders.forEach(f => {
+    btns.push({
+      t:f.name,
+      c:"confirm",
+      fn:()=>{
+        deck.folderId = f.id;
+        saveAppState({...appState, version: 4, decks, folders, lastUsedDeckId});
+        renderDecks();
+        toast(`'${f.name}' 폴더로 이동했어요`);
+      }
+    });
+  });
+
+  modal("폴더 이동",`'${deck.name}' 덱을 어디로 이동할까요?`, btns);
+}
+
+function deleteFolder(folderId){
+  const folder = folders.find(f => f.id === folderId);
+  if(!folder) return;
+
+  const folderDecks = decks.filter(d => d.folderId === folderId);
+  const btns = [
+    {t:"취소",c:"cancel"}
+  ];
+
+  if(folderDecks.length > 0){
+    const msg = `'${esc(folder.name)}' 폴더에 ${folderDecks.length}개의 덱이 있습니다.\n폴더를 삭제하면 이 덱들도 함께 삭제됩니다.`;
+    btns.push({
+      t:"삭제",c:"danger",
+      fn:()=>{
+        decks = decks.filter(d => d.folderId !== folderId);
+        folders = folders.filter(f => f.id !== folderId);
+        saveAppState({...appState, version: 4, decks, folders, lastUsedDeckId});
+        renderDecks();
+        toast("폴더를 삭제했어요");
+      }
+    });
+    modal("폴더 삭제", msg, btns);
+  }else{
+    const msg = `'${esc(folder.name)}' 폴더를 삭제하시겠어요?`;
+    btns.push({
+      t:"삭제",c:"danger",
+      fn:()=>{
+        folders = folders.filter(f => f.id !== folderId);
+        saveAppState({...appState, version: 4, decks, folders, lastUsedDeckId});
+        renderDecks();
+        toast("폴더를 삭제했어요");
+      }
+    });
+    modal("폴더 삭제", msg, btns);
+  }
+}
+
+/* ============ import / export ============ */
+function exportDeck(id){
+  const d=decks.find(x=>x.id===id); if(!d) return;
+  downloadJSON([d], (d.name||"deck").replace(/\s+/g,"_")+".json");
+  toast("파일로 저장했어요");
+}
+function triggerImport(){ $("fileInput").value=""; $("fileInput").click(); }
+$("fileInput").addEventListener("change",e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      let data=JSON.parse(r.result);
+      if(!Array.isArray(data)) data=[data];
+      let n=0;
+      data.forEach(d=>{
+        if(d && d.name && Array.isArray(d.cards)){
+          decks.unshift({
+            id:uid(),
+            name:d.name,
+            cards:d.cards.map(c=>{
+              let box = c.box || 1;
+              let boxRev = c.boxRev || 1;
+              if(c.known!==undefined && c.box===undefined){
+                box = c.known ? 4 : 1;
+              }
+              return {
+                f:c.f||"",
+                b:c.b||"",
+                box:box,
+                lastSeen:c.lastSeen||0,
+                boxRev:boxRev,
+                lastSeenRev:c.lastSeenRev||0
+              };
+            })
+          });
+          n++;
+        }
+      });
+      save(decks); goDecks();
+      toast(n? n+"개 덱을 가져왔어요":"불러올 덱이 없어요");
+    }catch(err){ toast("파일을 읽지 못했어요"); }
+  };
+  r.readAsText(file);
+});
+function downloadJSON(obj,filename){
+  const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+/* ============ modal ============ */
+function modal(title,body,btns){
+  $("modalTitle").textContent=title; $("modalBody").textContent=body;
+  const wrap=$("modalBtns"); wrap.innerHTML="";
+  btns.forEach(b=>{
+    const el=document.createElement("button"); el.className=b.c; el.textContent=b.t;
+    el.onclick=()=>{ closeModal(); if(b.fn) b.fn(); };
+    wrap.appendChild(el);
+  });
+  $("modalBg").classList.add("show");
+}
+function closeModal(){ $("modalBg").classList.remove("show"); }
+$("modalBg").addEventListener("click",e=>{ if(e.target===$("modalBg")) closeModal(); });
+
+/* ============ STATS & SETTINGS ============ */
+function renderStats(){
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const todayData = appState.learningHistory?.[todayStr] || { totalCards: 0, correctCards: 0 };
+
+  $("todayTotal").textContent = todayData.totalCards;
+  const rate = todayData.totalCards > 0 ? Math.round(todayData.correctCards / todayData.totalCards * 100) : 0;
+  $("todayRate").textContent = rate + "%";
+
+  // 월간 캘린더
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay();
+
+  let calendarHTML = `<div style="margin-bottom:12px;">
+    <div style="text-align:center;font-weight:700;margin-bottom:12px;">${year}년 ${month+1}월</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">`;
+
+  // 요일 헤더
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  days.forEach(d => {
+    calendarHTML += `<div style="text-align:center;font-size:.75rem;color:var(--text-dim);font-weight:600;padding:6px 0;">${d}</div>`;
+  });
+
+  // 빈 칸 (이전 달)
+  for(let i = 0; i < startingDayOfWeek; i++){
+    calendarHTML += `<div></div>`;
+  }
+
+  // 날짜와 데이터
+  for(let day = 1; day <= daysInMonth; day++){
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const data = appState.learningHistory?.[dateStr];
+    const cards = data?.totalCards || 0;
+    const bgColor = cards > 0 ? 'var(--accent)' : 'transparent';
+    const textColor = cards > 0 ? '#000' : 'var(--text)';
+
+    calendarHTML += `<div style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--line);background:${bgColor};color:${textColor};font-size:.75rem;">
+      <div style="font-weight:700;">${day}</div>
+      ${cards > 0 ? `<div style="font-size:.65rem;">${cards}장</div>` : ''}
+    </div>`;
+  }
+
+  calendarHTML += `</div></div>`;
+  $("reviewProgress").innerHTML = calendarHTML;
+}
+
+function renderSettings(){
+  let timeHTML = '<div class="section-title">푸시 알림</div>';
+  const times = appState.notificationTimes || [
+    { time: "09:00", enabled: true },
+    { time: "12:00", enabled: true },
+    { time: "15:00", enabled: true },
+    { time: "18:00", enabled: true },
+    { time: "21:00", enabled: true }
+  ];
+
+  for(let i = 0; i < times.length; i++){
+    const t = times[i];
+    timeHTML += `<div style="background:var(--surface);padding:16px;border-radius:12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;">
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-height:44px;">
+        <div style="width:40px;height:40px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;font-size:1rem;flex-shrink:0;">${i+1}</div>
+        <input type="time" value="${t.time}" onchange="updateReviewTime(${i}, this.value)" style="flex:1;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:16px;min-height:44px;">
+      </div>
+      <label style="width:56px;height:40px;border-radius:20px;background:${t.enabled ? 'var(--accent)' : 'var(--line)'};display:flex;align-items:center;padding:3px;box-sizing:border-box;cursor:pointer;transition:background .2s;position:relative;flex-shrink:0;">
+        <input type="checkbox" ${t.enabled ? 'checked' : ''} onchange="toggleNotificationTime(${i})" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
+        <div style="width:34px;height:34px;border-radius:17px;background:#000;transition:transform .2s;transform:translateX(${t.enabled ? '16px' : '0px'});pointer-events:none;"></div>
+      </label>
+    </div>`;
+  }
+  $("reviewTimeSettings").innerHTML = timeHTML;
+}
+
+function updateReviewTime(index, time){
+  if(appState.notificationTimes && appState.notificationTimes[index]){
+    appState.notificationTimes[index].time = time;
+    saveAppState(appState);
+    toast("복습 시간이 변경되었어요");
+  }
+}
+
+function toggleNotificationTime(index){
+  if(!appState.notificationTimes){
+    return;
+  }
+  if(appState.notificationTimes && appState.notificationTimes[index]){
+    appState.notificationTimes[index].enabled = !appState.notificationTimes[index].enabled;
+    saveAppState(appState);
+    renderSettings();
+    const status = appState.notificationTimes[index].enabled ? "활성화" : "비활성화";
+    toast(`${appState.notificationTimes[index].time} 알림이 ${status}되었어요`);
+
+    // 켜질 때 권한 요청
+    if(appState.notificationTimes[index].enabled){
+      if("Notification" in window){
+        if(Notification.permission === "granted"){
+          console.log("이미 알림 권한이 있습니다");
+        } else if(Notification.permission === "default"){
+          console.log("알림 권한을 요청 중입니다");
+          Notification.requestPermission().then(permission => {
+            console.log("권한 요청 결과:", permission);
+            if(permission === "granted"){
+              toast("알림 권한이 승인되었어요!");
+            }
+          });
+        } else {
+          toast("브라우저 알림이 차단되었어요. 브라우저 설정에서 허용해주세요.");
+        }
+      }
+    }
+  }
+}
+
+function toggleNotifications(){
+  const enabled = $("notificationEnabled").checked;
+  localStorage.setItem("notificationsEnabled", enabled);
+  if(enabled){
+    requestNotificationPermission();
+    scheduleNotifications();
+    toast("알림이 활성화되었어요 (5개 시간대에 알림 발송)");
+  }else{
+    toast("알림이 비활성화되었어요");
+  }
+}
+
+function requestNotificationPermission(){
+  if("Notification" in window && Notification.permission === "default"){
+    Notification.requestPermission();
+  }
+}
+
+function scheduleNotifications(){
+  checkAndSendNotification();
+  // 1분마다 체크
+  setInterval(checkAndSendNotification, 60000);
+}
+
+function checkAndSendNotification(){
+  const times = appState.notificationTimes || [
+    { time: "09:00", enabled: true },
+    { time: "12:00", enabled: true },
+    { time: "15:00", enabled: true },
+    { time: "18:00", enabled: true },
+    { time: "21:00", enabled: true }
+  ];
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMin = now.getMinutes();
+  const timeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
+
+  console.log(`[알림 체크] 현재 시간: ${timeStr}, Notification 권한: ${Notification.permission}`);
+
+  // 설정된 시간 중 현재 시간과 일치하는지 확인
+  for(let item of times){
+    if(!item.enabled) continue; // 비활성화된 시간은 스킵
+    const [hours, mins] = item.time.split(':').map(Number);
+    console.log(`체크 중: ${item.time} vs ${timeStr}, 일치: ${currentHour === hours && currentMin === mins}`);
+
+    if(currentHour === hours && currentMin === mins){
+      const today = new Date().toISOString().split('T')[0];
+      const notifyKey = `notified_${today}`;
+      const notifyCount = parseInt(localStorage.getItem(notifyKey) || "0");
+
+      console.log(`⏰ ${item.time} 알림 발송 시간 도래! (오늘 ${notifyCount}번 발송됨)`);
+
+      // 최대 5번까지만
+      if(notifyCount < 5){
+        sendNotification();
+        localStorage.setItem(notifyKey, notifyCount + 1);
+      }else{
+        console.log(`오늘 이미 5번 발송됨`);
+      }
+    }
+  }
+}
+
+function sendNotification(){
+  console.log("sendNotification() 호출됨, 권한:", Notification.permission);
+
+  if("Notification" in window && Notification.permission === "granted"){
+    try{
+      const notif = new Notification("📚 복습할 시간이에요!", {
+        body: "오늘의 카드 복습을 시작해보세요",
+        icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='50' font-size='80' text-anchor='middle' dominant-baseline='middle'>📚</text></svg>",
+        tag: "cardlearn-notification",
+        requireInteraction: false
+      });
+      notif.onclick = () => window.focus();
+      console.log("✅ 알림이 성공적으로 발송되었습니다");
+      toast("📢 알림이 발송되었어요!");
+    }catch(e){
+      console.error("알림 발송 실패:", e);
+      toast("알림 발송에 실패했습니다");
+    }
+  }else{
+    console.log("❌ 알림을 발송할 수 없습니다. Notification API 또는 권한 확인 필요");
+  }
+}
+
+function exportData(){
+  const backup = JSON.stringify(appState, null, 2);
+  const blob = new Blob([backup], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `cardlearn_backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("백업이 완료되었어요");
+}
+
+function triggerDataImport(){
+  $("dataImportInput").click();
+}
+
+function importData(){
+  const file = $("dataImportInput").files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try{
+      const imported = JSON.parse(e.target.result);
+      if(!imported.decks || !Array.isArray(imported.decks)) throw new Error("유효하지 않은 백업 파일입니다");
+
+      // 버전 호환성 처리
+      let data = imported;
+      if(data.version < 4){
+        data = migrateV3toV4(data);
+      }
+
+      // 데이터 복원
+      appState = data;
+      decks = appState.decks;
+      folders = appState.folders || [];
+      lastUsedDeckId = appState.lastUsedDeckId || null;
+      currentFolderId = null;
+
+      // localStorage에 저장
+      localStorage.setItem(STORE_KEY, JSON.stringify(appState));
+
+      // 화면 갱신
+      renderDecks();
+      toast("복구가 완료되었어요");
+    }catch(err){
+      console.error("Import error:", err);
+      toast("복구 실패: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+  $("dataImportInput").value = "";
+}
+
+// Service Worker 등록 (https/http만 지원)
+if("serviceWorker" in navigator && location.protocol !== "file:"){
+  navigator.serviceWorker.register("data:application/javascript," + encodeURIComponent(`
+    self.addEventListener('install', e => self.skipWaiting());
+    self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+  `)).catch(e => console.log("SW 등록 실패", e));
+}
+
+// 초기화 시 알림 스케줄
+const hasEnabledTime = appState.notificationTimes && appState.notificationTimes.some(t => t.enabled);
+if(hasEnabledTime){
+  requestNotificationPermission();
+}
+// 항상 스케줄 시작 (활성화된 시간이 있는지 확인하면서 실행)
+scheduleNotifications();
+
+/* ---------- init ---------- */
+renderDecks();
+</script>
+</body>
+</html>
